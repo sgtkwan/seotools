@@ -4,14 +4,15 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-10">
         <div class="card shadow">
             <div class="card-header bg-primary text-white">
                 <h2 class="card-title mb-0">
-                    <i class="fas fa-upload me-2"></i>Upload Excel File for Classification
+                    <i class="fas fa-upload me-2"></i>Upload Excel File for AI-Powered Keyword Classification
                 </h2>
             </div>
             <div class="card-body">
+                <!-- File Upload Section -->
                 <form method="POST" enctype="multipart/form-data" id="uploadForm">
                     <div class="upload-area" id="uploadArea">
                         <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
@@ -32,20 +33,160 @@
                     
                     <div class="text-center mt-4">
                         <button type="submit" class="btn btn-success btn-lg" id="uploadBtn" disabled>
-                            <i class="fas fa-check me-2"></i>Process File
+                            <i class="fas fa-check me-2"></i>Process File with AI
                         </button>
                     </div>
                 </form>
                 
-                <div class="mt-4">
-                    <h5><i class="fas fa-info-circle text-info me-2"></i>File Requirements:</h5>
-                    <ul class="list-unstyled">
-                        <li><i class="fas fa-check-circle text-success me-2"></i>Supported formats: CSV, XLS, XLSX</li>
-                        <li><i class="fas fa-check-circle text-success me-2"></i>Maximum file size: 16MB</li>
-                        <li><i class="fas fa-check-circle text-success me-2"></i>First column: Keywords</li>
-                        <li><i class="fas fa-check-circle text-success me-2"></i>Second column: Brands</li>
-                        <li><i class="fas fa-check-circle text-success me-2"></i>Additional columns: Classification tags</li>
-                    </ul>
+                <!-- File Structure Instructions -->
+                <div class="mt-5">
+                    <h4 class="text-primary mb-4">
+                        <i class="fas fa-table me-2"></i>File Structure Requirements
+                    </h4>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-lightbulb me-2"></i><strong>How to Structure Your File:</strong></h6>
+                        <p class="mb-0">Your Excel/CSV file must follow this exact column structure for the AI to properly classify your keywords.</p>
+                    </div>
+
+                    <!-- Visual Example Table -->
+                    <div class="table-responsive mb-4">
+                        <h5 class="mb-3"><i class="fas fa-eye me-2"></i>Example File Structure:</h5>
+                        <table class="table table-bordered table-sm">
+                            <thead>
+                                <tr style="background-color: #495057; color: white;">
+                                    <th>Keywords</th>
+                                    <th>Brand</th>
+                                    <th>Category 1 (ie Branded/Generic)</th>
+                                    <th>Category 2</th>
+                                    <th>Category 3</th>
+                                    <th>...</th>
+                                    <th>Category X</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>keyword1</strong></td>
+                                    <td><strong>Brand (ie groupm)</strong></td>
+                                    <td><strong>tag1 (ie brand)</strong></td>
+                                    <td><strong>tag1</strong></td>
+                                    <td><strong>tag1</strong></td>
+                                    <td>...</td>
+                                    <td><strong>tag1</strong></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>keyword2</strong></td>
+                                    <td></td>
+                                    <td><strong>tag2 (ie generic)</strong></td>
+                                    <td><strong>tag2</strong></td>
+                                    <td><strong>tag2</strong></td>
+                                    <td>...</td>
+                                    <td><strong>tag2</strong></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>keyword3</strong></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td><strong>tag3</strong></td>
+                                    <td><strong>tag3</strong></td>
+                                    <td>...</td>
+                                    <td><strong>tag3</strong></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>keyword4</strong></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td>...</td>
+                                    <td><strong>tag4</strong></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>keyword5</strong></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td>...</td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Detailed Column Instructions -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="fas fa-columns me-2"></i>Required Columns</h6>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled mb-0">
+                                        <li class="mb-2">
+                                            <strong>Column 1: Keywords</strong><br>
+                                            <small class="text-muted">The search terms you want classified (one per row)</small>
+                                        </li>
+                                        <li class="mb-2">
+                                            <strong>Column 2: Brand</strong><br>
+                                            <small class="text-muted">Brand name or "Generic" if no specific brand</small>
+                                        </li>
+                                        <li class="mb-2">
+                                            <strong>Column 3+: Classification Tags</strong><br>
+                                            <small class="text-muted">Each column header becomes a category, with possible tags listed below</small>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Important Rules</h6>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled mb-0">
+                                        <li class="mb-2">
+                                            <i class="fas fa-check-circle text-success me-1"></i>
+                                            <strong>Minimum 3 columns</strong> (Keywords + Brand + 1 Category)
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="fas fa-check-circle text-success me-1"></i>
+                                            <strong>Column headers</strong> become category names, these names will be used in the final output
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="fas fa-check-circle text-success me-1"></i>
+                                            <strong>Tags below headers</strong> show possible values that the AI will classify they keywords
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="fas fa-check-circle text-success me-1"></i>
+                                            <strong>AI will classify</strong> each keyword into appropriate tags
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File Requirements -->
+                    <div class="mt-4">
+                        <h5><i class="fas fa-info-circle text-info me-2"></i>Technical Requirements:</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check-circle text-success me-2"></i>Supported formats: CSV, XLS, XLSX</li>
+                                    <li><i class="fas fa-check-circle text-success me-2"></i>Maximum file size: 16MB</li>
+                                    <li><i class="fas fa-check-circle text-success me-2"></i>No empty columns in between headers and tags</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check-circle text-success me-2"></i>First row must be headers</li>
+                                    <li><i class="fas fa-check-circle text-success me-2"></i>Data starts from row 2</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
