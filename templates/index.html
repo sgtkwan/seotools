@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Upload File - Keyword Classification Tool{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h2 class="card-title mb-0">
+                    <i class="fas fa-upload me-2"></i>Upload Excel File for Classification
+                </h2>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                    <div class="upload-area" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                        <h4>Drag & Drop your file here</h4>
+                        <p class="text-muted">or click to browse</p>
+                        <input type="file" name="file" id="fileInput" class="form-control" 
+                               accept=".csv,.xlsx,.xls" required style="display: none;">
+                        <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-folder-open me-2"></i>Choose File
+                        </button>
+                    </div>
+                    
+                    <div id="fileInfo" class="file-info" style="display: none;">
+                        <h5><i class="fas fa-file-excel text-success me-2"></i>Selected File:</h5>
+                        <p id="fileName" class="mb-2"></p>
+                        <p id="fileSize" class="text-muted mb-0"></p>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-success btn-lg" id="uploadBtn" disabled>
+                            <i class="fas fa-check me-2"></i>Process File
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-4">
+                    <h5><i class="fas fa-info-circle text-info me-2"></i>File Requirements:</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Supported formats: CSV, XLS, XLSX</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Maximum file size: 16MB</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>First column: Keywords</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Second column: Brands</li>
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Additional columns: Classification tags</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const uploadBtn = document.getElementById('uploadBtn');
+
+    // Drag and drop functionality
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelect();
+        }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', handleFileSelect);
+
+    function handleFileSelect() {
+        const file = fileInput.files[0];
+        if (file) {
+            fileName.textContent = file.name;
+            fileSize.textContent = `Size: ${(file.size / 1024 / 1024).toFixed(2)} MB`;
+            fileInfo.style.display = 'block';
+            uploadBtn.disabled = false;
+        }
+    }
+
+    // Form submission
+    document.getElementById('uploadForm').addEventListener('submit', function() {
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        uploadBtn.disabled = true;
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Processing Complete - Keyword Classification Tool{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h2 class="card-title mb-0">
+                    <i class="fas fa-check-circle me-2"></i>Processing Complete!
+                </h2>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-file-excel fa-5x text-success mb-3"></i>
+                    <h4>Your file has been successfully processed!</h4>
+                    <p class="text-muted">{{ processed_count }} keywords have been classified using Gemini AI.</p>
+                </div>
+                
+                <div class="alert alert-success" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Original file:</strong> {{ original_filename }}<br>
+                    <strong>Processed keywords:</strong> {{ processed_count }}<br>
+                    <strong>Generated:</strong> {{ moment().format('MMMM Do YYYY, h:mm:ss a') if moment else 'Just now' }}
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a href="{{ url_for('download_file', filename=output_filename) }}" 
+                       class="btn btn-success btn-lg" id="downloadBtn">
+                        <i class="fas fa-download me-2"></i>Download Results
+                    </a>
+                    <a href="{{ url_for('home') }}" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-upload me-2"></i>Process Another File
+                    </a>
+                </div>
+                
+                <div class="mt-4">
+                    <small class="text-muted">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        Your file will be automatically deleted from our servers after download for security.
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Download Tips -->
+        <div class="card shadow mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>Download Tips
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-chrome text-warning me-2"></i>Chrome Browser</h6>
+                        <ul class="small">
+                            <li>If download is blocked, click the download icon in address bar</li>
+                            <li>Select "Keep" if Chrome shows a warning</li>
+                            <li>Enable "Unsafe downloads" temporarily if needed</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-file-excel text-success me-2"></i>File Information</h6>
+                        <ul class="small">
+                            <li>Format: Excel (.xlsx) compatible</li>
+                            <li>Opens in Excel, Google Sheets, LibreOffice</li>
+                            <li>Contains all original data plus classifications</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const downloadBtn = document.getElementById('downloadBtn');
+    
+    // Auto-trigger download after 2 seconds
+    setTimeout(function() {
+        if (downloadBtn) {
+            // Add visual feedback
+            downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Starting Download...';
+            downloadBtn.classList.add('disabled');
+            
+            // Trigger download
+            window.location.href = downloadBtn.href;
+            
+            // Reset button after 3 seconds
+            setTimeout(function() {
+                downloadBtn.innerHTML = '<i class="fas fa-download me-2"></i>Download Results';
+                downloadBtn.classList.remove('disabled');
+            }, 3000);
+        }
+    }, 2000);
+    
+    // Manual download click handler
+    downloadBtn.addEventListener('click', function(e) {
+        // Don't prevent default, let the download happen
+        this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Downloading...';
+        this.classList.add('disabled');
+        
+        setTimeout(() => {
+            this.innerHTML = '<i class="fas fa-check me-2"></i>Downloaded!';
+            setTimeout(() => {
+                this.innerHTML = '<i class="fas fa-download me-2"></i>Download Again';
+                this.classList.remove('disabled');
+            }, 2000);
+        }, 1000);
+    });
+});
+</script>
+{% endblock %}

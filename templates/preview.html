@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}File Preview - Keyword Classification Tool{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-eye me-2"></i>File Preview
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-file-excel text-success me-2"></i>File Information</h5>
+                        <ul class="list-unstyled">
+                            <li><strong>Filename:</strong> {{ file_info.original_filename }}</li>
+                            <li><strong>Keywords:</strong> {{ file_info.summary.keywords_count }}</li>
+                            <li><strong>Brands:</strong> {{ file_info.summary.brands|length }}</li>
+                            <li><strong>Classification Columns:</strong> {{ file_info.summary.columns|length }}</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-tags text-primary me-2"></i>Available Columns</h5>
+                        <ul class="list-unstyled">
+                            {% for column in file_info.summary.columns %}
+                            <li><i class="fas fa-arrow-right text-muted me-2"></i>{{ column }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                {% if file_info.summary.brands %}
+                <div class="mt-3">
+                    <h5><i class="fas fa-building text-info me-2"></i>Brands Found</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for brand in file_info.summary.brands[:10] %}
+                        <span class="badge bg-secondary">{{ brand }}</span>
+                        {% endfor %}
+                        {% if file_info.summary.brands|length > 10 %}
+                        <span class="badge bg-light text-dark">+{{ file_info.summary.brands|length - 10 }} more</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-cogs me-2"></i>Processing Options
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('process_file', filename=unique_filename) }}" id="processForm">
+                    <div class="mb-3">
+                        <label for="batch_size" class="form-label">
+                            <i class="fas fa-layer-group me-2"></i>Batch Size
+                        </label>
+                        <input type="number" class="form-control" id="batch_size" name="batch_size" 
+                               value="200" min="10" max="500">
+                        <div class="form-text">Number of keywords to process at once (10-500)</div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Processing Time:</strong><br>
+                        Estimated: {{ "%.1f"|format((file_info.summary.keywords_count / 200) * 1.5) }} minutes
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success w-100" id="processBtn">
+                        <i class="fas fa-robot me-2"></i>Start Classification
+                    </button>
+                </form>
+                
+                <div class="processing-spinner" id="processingSpinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Processing...</span>
+                    </div>
+                    <p class="mt-2">Processing with Gemini AI...</p>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow mt-3">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Important Notes
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li><i class="fas fa-clock text-warning me-2"></i>Processing may take several minutes</li>
+                    <li><i class="fas fa-download text-success me-2"></i>Results will download automatically</li>
+                    <li><i class="fas fa-shield-alt text-info me-2"></i>Your data is processed securely</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="text-center">
+            <a href="{{ url_for('home') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Upload Different File
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const processForm = document.getElementById('processForm');
+    const processBtn = document.getElementById('processBtn');
+    const processingSpinner = document.getElementById('processingSpinner');
+
+    processForm.addEventListener('submit', function(e) {
+        processBtn.style.display = 'none';
+        processingSpinner.style.display = 'block';
+        
+        // Disable form to prevent double submission
+        const formElements = processForm.querySelectorAll('input, button, select');
+        formElements.forEach(el => el.disabled = true);
+        
+        // More realistic progress simulation
+        let progress = 0;
+        const progressBar = document.querySelector('.progress-bar');
+        const totalKeywords = {{ file_info.summary.keywords_count }};
+        const batchSize = parseInt(document.getElementById('batch_size').value) || 200;
+        const totalBatches = Math.ceil(totalKeywords / batchSize);
+        const timePerBatch = 30; // seconds per batch (estimated)
+        
+        const interval = setInterval(function() {
+            const increment = (100 / totalBatches) / (timePerBatch / 2); // Update every 2 seconds
+            progress = Math.min(progress + increment, 95); // Don't go to 100% until actual completion
+            progressBar.style.width = progress + '%';
+            progressBar.textContent = Math.round(progress) + '%';
+        }, 2000);
+        
+        // Clean up interval on page unload or form completion
+        const cleanup = () => clearInterval(interval);
+        window.addEventListener('beforeunload', cleanup);
+        
+        // Store cleanup function for potential later use
+        window.progressCleanup = cleanup;
+    });
+});
+</script>
+{% endblock %}
