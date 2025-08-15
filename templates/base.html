@@ -1,50 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Keyword Classification Tool{% endblock %}</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .upload-area {
-            border: 2px dashed #007bff;
-            border-radius: 10px;
-            padding: 40px;
-            text-align: center;
-            transition: all 0.3s ease;
-            background: #f8f9fa;
-        }
-        .upload-area:hover {
-            border-color: #0056b3;
-            background: #e3f2fd;
-        }
-        .upload-area.dragover {
-            border-color: #28a745;
-            background: #d4edda;
-        }
-        .file-info {
-            background: #fff;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-        .progress-container {
-            display: none;
-            margin: 20px 0;
-        }
-        .processing-spinner {
-            display: none;
-            text-align: center;
-            margin: 20px 0;
-        }
-        .alert {
-            margin: 20px 0;
-        }
-    </style>
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
 </head>
 <body>
+    <!-- Theme Toggle Button -->
+    <div class="theme-toggle" id="themeToggle" title="Toggle Light/Dark Mode">
+        <i class="fas fa-sun" id="themeIcon"></i>
+        <span class="theme-text" id="themeText">Light Mode</span>
+    </div>
+
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('home') }}">
@@ -70,6 +40,43 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Theme Toggle Script -->
+    <script>
+        // Theme Toggle Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('themeToggle');
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+            
+            // Check for saved theme preference or default to light mode
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            updateThemeUI(currentTheme);
+            
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeUI(newTheme);
+            });
+            
+            function updateThemeUI(theme) {
+                if (theme === 'dark') {
+                    // Currently in dark mode, show option to switch to light
+                    themeIcon.className = 'fas fa-sun';
+                    themeText.textContent = 'Light Mode';
+                } else {
+                    // Currently in light mode, show option to switch to dark
+                    themeIcon.className = 'fas fa-moon';
+                    themeText.textContent = 'Dark Mode';
+                }
+            }
+        });
+    </script>
+    
     {% block scripts %}{% endblock %}
 </body>
 </html>
