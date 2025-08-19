@@ -37,25 +37,30 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 class KeywordClassificationAgent:
     def __init__(self):
         self.model = genai.GenerativeModel('gemini-2.5-flash')
-        self.system_prompt = """You are a keyword classification expert. Your task is to categorize keywords using predefined tags from a JSON structure.
+        self.system_prompt = """You are a keyword classification expert. Your task is to categorize keywords using a JSON spec that supports two column modes: (A) predefined tags and (B) instruction-only columns where you must propose tags.
 
-**Input Format:**
-* JSON with `keywords`, `brands`, and `columns` arrays
-* Each column has a `name` and `tags` array
-* Tags are mutually exclusive between columns
+JSON schema:
+* `keywords`: array of strings
+* `brands`: array of strings
+* `columns`: array where each item is one of:
+  - Predefined-tags column: `{ "name": string, "tags": string[] }`
+  - Instruction-only column: `{ "name": string, "instructions": string }`
 
-**Classification Rules:**
-1. **One tag per column**: Each keyword gets exactly ONE tag from each column, or blank if none apply
-2. **Exact or semantic matching**: Match on exact phrases or very close semantic meaning
-3. **No cross-column contamination**: Tags from one column cannot be used in another column
-4. **Conservative approach**: If uncertain, leave blank rather than guess
+Rules:
+1) One tag per column: For each keyword, select exactly ONE tag from each column, or leave blank if none apply.
+2) Matching: Use exact or close semantic matching to choose tags.
+3) Column isolation: Never reuse tags across columns. Tags belong only to their column.
+4) Conservative blanks: If no tag fits well, leave the cell blank.
+5) Instruction-only columns: For columns with `instructions` (and no `tags`), first infer a small, coherent set of tags (concise phrases, non-overlapping), guided by the instructions and the provided keywords/brands. Then classify the keywords using ONLY those inferred tags. Do NOT invent wildly granular tags; prefer 3–10 clear options.
+6) Do not output any explanations, the inferred tag list, or any extra text.
 
-**Output Format:** Return a markdown table with:
-* Column 1: Original keyword
-* Subsequent columns: One for each column in the JSON (using column names as headers)
-* Values: Selected tags or blank cells
+Output format:
+Return ONLY a markdown table with:
+* Column 1: "Original keyword"
+* Subsequent columns: one per column using each column's `name` as the header
+* Cells: the single selected tag for that column, or blank
 
-Be precise and consistent in your classifications."""
+Be precise, consistent, and avoid free-form text that isn't a tag."""
         
         self.json_data = None
         self.keywords = []
@@ -103,7 +108,13 @@ Be precise and consistent in your classifications."""
                         "name": col,
                         "tags": unique_values
                     }
-                    result["columns"].append(column_data)
+                else:
+                    # No explicit tags provided in the sheet; mark as instruction-only column.
+                    column_data = {
+                        "name": col,
+                        "instructions": ""
+                    }
+                result["columns"].append(column_data)
             
             return result
             
@@ -161,7 +172,11 @@ Be precise and consistent in your classifications."""
             try:
                 response = self.model.generate_content(prompt)
                 batch_result = response.text.strip()
-                batch_data = self._parse_markdown_to_data(batch_result)
+                batch_data = self._parse_markdown_to_data(
+                    batch_result,
+                    expected_keywords=batch_keywords,
+                    expected_num_columns=len(headers)
+                )
                 all_data.extend(batch_data)
                 
             except Exception as e:
@@ -173,27 +188,49 @@ Be precise and consistent in your classifications."""
         self._save_data_to_excel(headers, all_data, output_file)
         return len(all_data)
     
-    def _parse_markdown_to_data(self, markdown_result):
-        """Parse markdown table directly to list of lists (data rows)."""
+    def _parse_markdown_to_data(self, markdown_result, expected_keywords, expected_num_columns):
+        """Parse markdown table to list of lists and ignore stray/non-data rows.
+
+        Rules:
+        - Row must have the same number of columns as the header.
+        - First cell must match one of the expected keywords (case-insensitive).
+        - Ignore header separator and decoration rows.
+        """
+        normalized_expected = {str(k).strip().lower() for k in expected_keywords}
+
         lines = [line.strip() for line in markdown_result.split('\n') if '|' in line]
-        
+
         filtered_lines = []
         for line in lines:
-            if not (line.count('-') > len(line) * 0.5 or line.startswith('|--') or 
-                   all(c in '|-: ' for c in line.replace('|', ''))):
+            # Skip typical markdown separator rows or lines that are only pipes/hyphens/colons/spaces
+            if not (line.count('-') > len(line) * 0.5 or line.startswith('|--') or
+                    all(c in '|-: ' for c in line.replace('|', ''))):
                 filtered_lines.append(line)
-        
+
         if not filtered_lines:
             return []
-        
+
+        # Determine expected column count using header if possible
+        header_cells = [c.strip() for c in filtered_lines[0].split('|')[1:-1]]
+        header_count = len(header_cells) if header_cells else expected_num_columns
+
         data_rows = []
         for line in filtered_lines[1:]:  # Skip header
-            cells = line.split('|')[1:-1]
-            row = [cell.strip() for cell in cells]
-            
-            if any(cell.strip() for cell in row):
-                data_rows.append(row)
-        
+            cells = [cell.strip() for cell in line.split('|')[1:-1]]
+
+            # Column count must match header
+            if len(cells) != header_count:
+                continue
+
+            # First column must be an expected keyword
+            if not cells:
+                continue
+            first_cell_normalized = cells[0].strip().lower()
+            if first_cell_normalized not in normalized_expected:
+                continue
+
+            data_rows.append(cells)
+
         return data_rows
     
     def _save_data_to_excel(self, headers, data_rows, output_file):
@@ -267,7 +304,9 @@ def allowed_file(filename):
 def home():
     """Main route for file upload and preview."""
     if request.method == "GET":
-        return render_template("index.html")
+        # Provide the current/default system prompt to prefill the textarea on the index page
+        default_prompt_agent = KeywordClassificationAgent()
+        return render_template("index.html", default_system_prompt=default_prompt_agent.system_prompt)
     
     file = request.files.get("file")
     
@@ -298,9 +337,14 @@ def home():
             'summary': summary
         }
         
+        # Capture user-provided system prompt (fallback to default if missing)
+        user_system_prompt = request.form.get('system_prompt') or agent.system_prompt
+        
         return render_template("preview.html", 
                              file_info=file_info,
-                             unique_filename=unique_filename)
+                             unique_filename=unique_filename,
+                             system_prompt=user_system_prompt,
+                             columns_detail=agent.columns)
         
     except Exception as e:
         flash(f"Error processing file: {str(e)}", "error")
@@ -318,10 +362,34 @@ def process_file(filename):
         
         # Get batch size from form (with default)
         batch_size = int(request.form.get('batch_size', DEFAULT_BATCH_SIZE))
+        # Get the (possibly edited) system prompt from the form
+        user_system_prompt = request.form.get('system_prompt')
         
         # Initialize agent and load data
         agent = KeywordClassificationAgent()
+        if user_system_prompt:
+            agent.system_prompt = user_system_prompt
         agent.load_data(file_path=filepath)
+
+        # Collect any instruction inputs for instruction-only columns and apply to agent.columns
+        updated_columns = []
+        for index, col in enumerate(agent.columns):
+            # Expect hidden field instruction_col_name_{i} for instruction columns as rendered in preview
+            instruction_name_field = f"instruction_col_name_{index}"
+            instruction_value_field = f"instruction_{index}"
+            provided_col_name = request.form.get(instruction_name_field)
+            provided_instruction = request.form.get(instruction_value_field, "").strip()
+
+            if isinstance(col, dict) and 'tags' not in col:
+                # Instruction-only column. If provided, set instructions text
+                column_copy = dict(col)
+                if provided_col_name == col.get('name') and provided_instruction:
+                    column_copy['instructions'] = provided_instruction
+                updated_columns.append(column_copy)
+            else:
+                updated_columns.append(col)
+
+        agent.columns = updated_columns
         
         # Create output filename
         base_name = Path(filename).stem

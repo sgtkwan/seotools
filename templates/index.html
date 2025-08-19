@@ -31,6 +31,14 @@
                         <p id="fileSize" class="text-muted mb-0"></p>
                     </div>
                     
+                    <div class="mt-4">
+                        <label for="system_prompt" class="form-label">
+                            <i class="fas fa-terminal me-2"></i>System Prompt (optional)
+                        </label>
+                        <textarea class="form-control" id="system_prompt" name="system_prompt" rows="8" placeholder="Enter a custom system prompt...">{{ default_system_prompt }}</textarea>
+                        <div class="form-text">This will guide how the AI classifies your keywords. If left unchanged, the default prompt is used.</div>
+                    </div>
+
                     <div class="text-center mt-4">
                         <button type="submit" class="btn btn-success btn-lg" id="uploadBtn" disabled>
                             <i class="fas fa-check me-2"></i>Process File with AI
@@ -112,6 +120,10 @@
                                 </tr>
                             </tbody>
                         </table>
+                        <div class="alert alert-secondary mt-2">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Instruction-only option:</strong> You may leave a category column <em>blank</em> (no tags under the header) to let the AI infer suitable tags. You'll be prompted to add optional instructions for such columns on the next page.
+                        </div>
                     </div>
 
                     <!-- Detailed Column Instructions -->
@@ -132,8 +144,8 @@
                                             <small class="text-muted">Brand name so the AI can classify what is branded</small>
                                         </li>
                                         <li class="mb-2">
-                                            <strong>Column 3+: Classification Tags</strong><br>
-                                            <small class="text-muted">Each column represents 1 category, with possible tags for that category listed below</small>
+                                            <strong>Column 3+: Classification Columns</strong><br>
+                                            <small class="text-muted">Each column is a category. Either list tags under the header (predefined) or leave cells blank to let the AI infer tags (you can add instructions on the next page).</small>
                                         </li>
                                     </ul>
                                 </div>
@@ -152,11 +164,17 @@
                                         </li>
                                         <li class="mb-2">
                                             <i class="fas fa-check-circle text-success me-1"></i>
-                                            <strong>Header names</strong> will stay the same in the output file
+                                            <strong>Header names</strong> stay the same in the output file
                                         </li>
                                         <li class="mb-2">
                                             <i class="fas fa-check-circle text-success me-1"></i>
-                                            <strong>Tags below headers</strong> show possible values that the AI will classify the keywords
+                                            <strong>Two modes for categories</strong>:
+                                            - Predefined tags: list tags under the header
+                                            - Instruction-only: leave cells blank; you'll add instructions on the next page
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="fas fa-check-circle text-success me-1"></i>
+                                            <strong>One tag per column</strong>; blanks are allowed if none apply
                                         </li>
                                     </ul>
                                 </div>
@@ -172,7 +190,7 @@
                                 <ul class="list-unstyled">
                                     <li><i class="fas fa-check-circle text-success me-2"></i>Supported formats: CSV, XLS, XLSX</li>
                                     <li><i class="fas fa-check-circle text-success me-2"></i>Maximum file size: 16MB</li>
-                                    <li><i class="fas fa-check-circle text-success me-2"></i>No empty columns in between any of the data</li>
+                                    <li><i class="fas fa-check-circle text-success me-2"></i>No unrelated empty columns. Category columns may be intentionally left blank to let the AI infer tags.</li>
                                 </ul>
                             </div>
                             <div class="col-md-6">
