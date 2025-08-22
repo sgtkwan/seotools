@@ -371,25 +371,8 @@ def process_file(filename):
             agent.system_prompt = user_system_prompt
         agent.load_data(file_path=filepath)
 
-        # Collect any instruction inputs for instruction-only columns and apply to agent.columns
-        updated_columns = []
-        for index, col in enumerate(agent.columns):
-            # Expect hidden field instruction_col_name_{i} for instruction columns as rendered in preview
-            instruction_name_field = f"instruction_col_name_{index}"
-            instruction_value_field = f"instruction_{index}"
-            provided_col_name = request.form.get(instruction_name_field)
-            provided_instruction = request.form.get(instruction_value_field, "").strip()
-
-            if isinstance(col, dict) and 'tags' not in col:
-                # Instruction-only column. If provided, set instructions text
-                column_copy = dict(col)
-                if provided_col_name == col.get('name') and provided_instruction:
-                    column_copy['instructions'] = provided_instruction
-                updated_columns.append(column_copy)
-            else:
-                updated_columns.append(col)
-
-        agent.columns = updated_columns
+        # Use columns as defined by the uploaded Excel and defaults; no extra instructions from UI
+        # (Removed UI-provided per-column instruction handling)
         
         # Create output filename
         base_name = Path(filename).stem
